@@ -12,30 +12,22 @@
         /// </summary>
         public static readonly double SquareRootOf2 = Math.Sqrt(2d);
         
-        /// <summary>
-        /// Cell center X coordinate
-        /// </summary>
-        public double CenterX { get; set; }
-        
-        /// <summary>
-        /// Cell center Y coordinate
-        /// </summary>
-        public double CenterY { get; set; }
+        public Point Center { get; }
         
         /// <summary>
         /// Half the cell size
         /// </summary>
-        public double HalfCellSize { get; set; }
+        public double HalfCellSize { get; }
         
         /// <summary>
         /// Distance from cell center to polygon
         /// </summary>
-        public double DistanceFromCenterToPolygon { get; set; }
+        public double DistanceFromCenterToPolygon { get; }
 
         /// <summary>
         /// Max distance to polygon wihin cell 
         /// </summary>
-        public double MaxDistanceToPolygonWithinCell { get; set; }
+        public double MaxDistanceToPolygonWithinCell { get; }
 
         /// <summary>
         /// Initializes a new instance of the Cell class.
@@ -44,12 +36,11 @@
         /// <param name="centerY">The cell center Y coordinate.</param>
         /// <param name="halfCellSize">Half the cell size.</param>
         /// <param name="polygon">The polygon.</param>
-        public Cell(double centerX, double centerY, double halfCellSize, double[][][] polygon)
+        public Cell(Point center, double halfCellSize, double[][][] polygon)
         {
-            this.CenterX = centerX;
-            this.CenterY = centerY;
+            this.Center = center;
             this.HalfCellSize = halfCellSize;
-            this.DistanceFromCenterToPolygon = Polylabel.GetDistanceFromPointToPolygonOutline(centerX, centerY, polygon);
+            this.DistanceFromCenterToPolygon = Polylabel.GetDistanceFromPointToPolygonOutline(this.Center, polygon);
             this.MaxDistanceToPolygonWithinCell = this.DistanceFromCenterToPolygon + this.HalfCellSize * SquareRootOf2;
         }
 

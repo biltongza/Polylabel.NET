@@ -13,21 +13,21 @@ namespace Polylabel.NET.Tests
         public void FindsPoleOfInaccessibilityForWater1AndPrecision1()
         {
             var result = Polylabel.CalculatePoleOfInaccessibility(water1, 1);
-            Assert.AreEqual((3865.85009765625, 2124.87841796875), result);
+            Assert.AreEqual(new Point(3865.85009765625, 2124.87841796875), result);
         }
 
         [Test]
         public void FindsPoleOfInaccessibilityForWater1AndPrecision50()
         {
             var result = Polylabel.CalculatePoleOfInaccessibility(water1, 50);
-            Assert.AreEqual((3854.296875, 2123.828125), result);
+            Assert.AreEqual(new Point(3854.296875, 2123.828125), result);
         }
 
         [Test]
         public void FindsPoleOfInaccessibilityForWater2AndDefaultPrecision1()
         {
             var result = Polylabel.CalculatePoleOfInaccessibility(water2);
-            Assert.AreEqual((3263.5, 3263.5), result);
+            Assert.AreEqual(new Point(3263.5, 3263.5), result);
         }
 
         [Test]
@@ -35,11 +35,11 @@ namespace Polylabel.NET.Tests
         {
             var first = JsonConvert.DeserializeObject<double[][][]>("[[[0, 0], [1, 0], [2, 0], [0, 0]]]");
             var firstResult = Polylabel.CalculatePoleOfInaccessibility(first);
-            Assert.AreEqual((0, 0), firstResult);
+            Assert.AreEqual(new Point(0, 0), firstResult);
 
             var second = JsonConvert.DeserializeObject<double[][][]>("[[[0, 0], [1, 0], [1, 1], [1, 0], [0, 0]]]");
             var secondResult = Polylabel.CalculatePoleOfInaccessibility(second);
-            Assert.AreEqual((0, 0), secondResult);
+            Assert.AreEqual(new Point(0, 0), secondResult);
         }
     }
 }

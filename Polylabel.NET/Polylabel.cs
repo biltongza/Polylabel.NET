@@ -1,10 +1,11 @@
 ﻿namespace Polylabel.NET
 {
     using System;
+    
 
     public static class Polylabel
     {
-        public static (double, double) CalculatePoleOfInaccessibility(double[][][] polygon, double precision = 1.0d)
+        public static Point CalculatePoleOfInaccessibility(double[][][] polygon, double precision = 1.0d)
         {
             // find the bounding box of the outer ring
             double minX = 0d, minY = 0d, maxX = 0d, maxY = 0d;
@@ -22,7 +23,7 @@
             var cellSize = Math.Min(width, height);
             var h = cellSize / 2;
 
-            if (cellSize == 0) return (minX, minY);
+            if (cellSize == 0) return new Point(minX, minY);
 
             // a priority queue of cells in order of their "potential" (max distance to polygon)
             var cellQueue = new PriorityQueue<Cell>(null);
@@ -32,7 +33,7 @@
             {
                 for (var y = minY; y < maxY; y += cellSize)
                 {
-                    cellQueue.Enqueue(new Cell(x + h, y + h, h, polygon));
+                    cellQueue.Enqueue(new Cell(new Point(x + h, y + h), h, polygon));
                 }
             }
 
@@ -40,7 +41,7 @@
             var bestCell = GetCentroidCellOfPolygon(polygon);
 
             // special case for rectangular polygons
-            var bboxCell = new Cell(minX + width / 2, minY + height / 2, 0, polygon);
+            var bboxCell = new Cell(new Point(minX + width / 2, minY + height / 2), 0, polygon);
             if (bboxCell.DistanceFromCenterToPolygon > bestCell.DistanceFromCenterToPolygon)
             {
                 bestCell = bboxCell;
@@ -66,17 +67,17 @@
 
                 // split the cell into four cells
                 h = cell.HalfCellSize / 2;
-                cellQueue.Enqueue(new Cell(cell.CenterX - h, cell.CenterY - h, h, polygon));
-                cellQueue.Enqueue(new Cell(cell.CenterX + h, cell.CenterY - h, h, polygon));
-                cellQueue.Enqueue(new Cell(cell.CenterX - h, cell.CenterY + h, h, polygon));
-                cellQueue.Enqueue(new Cell(cell.CenterX + h, cell.CenterY + h, h, polygon));
+                cellQueue.Enqueue(new Cell(new Point(cell.Center.X - h, cell.Center.Y - h), h, polygon));
+                cellQueue.Enqueue(new Cell(new Point(cell.Center.X + h, cell.Center.Y - h), h, polygon));
+                cellQueue.Enqueue(new Cell(new Point(cell.Center.X - h, cell.Center.Y + h), h, polygon));
+                cellQueue.Enqueue(new Cell(new Point(cell.Center.X + h, cell.Center.Y + h), h, polygon));
             }
 
-            return (bestCell.CenterX, bestCell.CenterY);
+            return bestCell.Center;
         }
 
         // signed distance from point to polygon outline (negative if point is outside)
-        public static double GetDistanceFromPointToPolygonOutline(double x, double y, double[][][] polygon)
+        public static double GetDistanceFromPointToPolygonOutline(Point point, double[][][] polygon)
         {
             var inside = false;
             var minDistSq = double.PositiveInfinity;
@@ -86,15 +87,15 @@
                 var ring = polygon[k];
                 for (int i = 0, len = ring.Length, j = len - 1; i < len; j = i++)
                 {
-                    var a = ring[i];
-                    var b = ring[j];
+                    var a = new Point(ring[i][0], ring[i][1]);
+                    var b = new Point(ring[j][0], ring[j][1]);
 
-                    if ((a[1] > y != b[1] > y) && (x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]))
+                    if ((a.Y > point.Y != b.Y > point.Y) && (point.X < (b.X - a.X) * (point.Y - a.Y) / (b.Y - a.Y) + a.X))
                     {
                         inside = !inside;
                     }
 
-                    minDistSq = Math.Min(minDistSq, GetSquaredDistanceFromPointToSegment(x, y, a, b));
+                    minDistSq = Math.Min(minDistSq, GetSquaredDistanceFromPointToSegment(point, a, b));
                 }
             }
 
@@ -102,21 +103,21 @@
         }
 
         // get squared distance from a point to a segment
-        private static double GetSquaredDistanceFromPointToSegment(double px, double py, double[] a, double[] b)
+        private static double GetSquaredDistanceFromPointToSegment(Point point, Point a, Point b)
         {
-            var x = a[0];
-            var y = a[1];
-            var dx = b[0] - x;
-            var dy = b[1] - y;
+            var x = a.X;
+            var y = a.Y;
+            var dx = b.X - x;
+            var dy = b.Y - y;
 
             if (dx != 0 || dy != 0)
             {
-                var t = ((px - x) * dx + (py - y) * dy) / (dx * dx + dy * dy);
+                var t = ((point.X - x) * dx + (point.Y - y) * dy) / (dx * dx + dy * dy);
 
                 if (t > 1)
                 {
-                    x = b[0];
-                    y = b[1];
+                    x = b.X;
+                    y = b.Y;
 
                 }
                 else if (t > 0)
@@ -126,8 +127,8 @@
                 }
             }
 
-            dx = px - x;
-            dy = py - y;
+            dx = point.X - x;
+            dy = point.Y - y;
 
             return dx * dx + dy * dy;
         }
@@ -152,10 +153,10 @@
 
             if (area == 0)
             {
-                return new Cell(points[0][0], points[0][1], 0, polygon);
+                return new Cell(new Point(points[0][0], points[0][1]), 0, polygon);
             }
 
-            return new Cell(x / area, y / area, 0, polygon);
+            return new Cell(new Point(x / area, y / area), 0, polygon);
         }
     }
 }
