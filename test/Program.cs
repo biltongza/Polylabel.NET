@@ -50,16 +50,28 @@ namespace test
         public static void Main()
         {
             System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
-            //var summary = BenchmarkRunner.Run<Benchmark>();
 
-            //for (int i = 0; i < 10000; i++)
-            //{
-            //    
-            //}
+            string input = "things";
+            do
+            {
+                Console.WriteLine("Enter a name");
+                input = Console.ReadLine();
+                if (string.IsNullOrEmpty(input))
+                {
+                    return;
+                }
+                if (!parsedWkts.TryGetValue(input, out double[][][] polygon))
+                {
+                    Console.WriteLine("Invalid name");
+                    continue;
+                }
 
-            var result = Polylabel.NET.Polylabel.CalculatePoleOfInaccessibility(parsedWkts["Alma"]);
-            Console.WriteLine($"POINT ({result.X} {result.Y})");
-            Console.Read();
+                var result = Polylabel.NET.Polylabel.CalculatePoleOfInaccessibility(polygon);
+                Console.WriteLine($"POINT ({result.X} {result.Y})");
+            }
+            while (!string.IsNullOrEmpty(input));
+
+            //Console.Read();
         }
 
         public class Benchmark
