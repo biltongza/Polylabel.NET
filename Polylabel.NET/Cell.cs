@@ -29,6 +29,10 @@
         /// </summary>
         public double MaxDistanceToPolygonWithinCell { get; }
 
+        public double Fitness { get; }
+
+        public double MaxFitness { get; }
+
         /// <summary>
         /// Initializes a new instance of the Cell class.
         /// </summary>
@@ -36,12 +40,14 @@
         /// <param name="centerY">The cell center Y coordinate.</param>
         /// <param name="halfCellSize">Half the cell size.</param>
         /// <param name="polygon">The polygon.</param>
-        public Cell(Point center, double halfCellSize, double[][][] polygon)
+        public Cell(Point center, double halfCellSize, double[][][] polygon, Func<Point, double, double> fitnessFunction)
         {
             this.Center = center;
             this.HalfCellSize = halfCellSize;
             this.DistanceFromCenterToPolygon = Polylabel.GetDistanceFromPointToPolygonOutline(this.Center, polygon);
             this.MaxDistanceToPolygonWithinCell = this.DistanceFromCenterToPolygon + this.HalfCellSize * SquareRootOf2;
+            this.Fitness = fitnessFunction(this.Center, this.DistanceFromCenterToPolygon);
+            this.MaxFitness = fitnessFunction(this.Center, this.MaxDistanceToPolygonWithinCell);
         }
 
         /// <summary>
@@ -51,7 +57,7 @@
         /// <returns>The difference between the two distances.</returns>
         public int CompareTo(Cell other)
         {
-            return (int)(other.MaxDistanceToPolygonWithinCell - this.MaxDistanceToPolygonWithinCell);
+            return (int)(other.MaxFitness - this.MaxFitness);
         }
     }
 }

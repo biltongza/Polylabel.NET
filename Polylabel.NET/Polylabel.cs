@@ -21,6 +21,7 @@
             var width = maxX - minX;
             var height = maxY - minY;
             var cellSize = Math.Min(width, height);
+            var maxSize = Math.Max(width, height);
             var h = cellSize / 2;
 
             if (cellSize == 0) return new Point(minX, minY);
@@ -28,24 +29,32 @@
             // a priority queue of cells in order of their "potential" (max distance to polygon)
             var cellQueue = new PriorityQueue<Cell>(null);
 
+            var centroid = GetCentroidOfPolygon(polygon);
+
+            Func<Point, double, double> fitnessFunc = (Point point, double distance) =>
+            {
+                if (distance <= 0)
+                {
+                    return distance;
+                }
+                var d = point - centroid;
+                var distanceCentroid = Math.Sqrt(d.X * d.X + d.Y * d.Y);
+                return distance * (1 - distanceCentroid / maxSize);
+            };
+
             // cover polygon with initial cells
             for (var x = minX; x < maxX; x += cellSize)
             {
                 for (var y = minY; y < maxY; y += cellSize)
                 {
-                    cellQueue.Enqueue(new Cell(new Point(x + h, y + h), h, polygon));
+                    cellQueue.Enqueue(new Cell(new Point(x + h, y + h), h, polygon, fitnessFunc));
                 }
             }
 
-            // take centroid as the first best guess
-            var bestCell = GetCentroidCellOfPolygon(polygon);
 
-            // special case for rectangular polygons
-            var bboxCell = new Cell(new Point(minX + width / 2, minY + height / 2), 0, polygon);
-            if (bboxCell.DistanceFromCenterToPolygon > bestCell.DistanceFromCenterToPolygon)
-            {
-                bestCell = bboxCell;
-            }
+
+            // take centroid as the first best guess
+            var bestCell = new Cell(centroid, 0, polygon, fitnessFunc);
 
 
             while (cellQueue.Length > 0)
@@ -67,10 +76,10 @@
 
                 // split the cell into four cells
                 h = cell.HalfCellSize / 2;
-                cellQueue.Enqueue(new Cell(new Point(cell.Center.X - h, cell.Center.Y - h), h, polygon));
-                cellQueue.Enqueue(new Cell(new Point(cell.Center.X + h, cell.Center.Y - h), h, polygon));
-                cellQueue.Enqueue(new Cell(new Point(cell.Center.X - h, cell.Center.Y + h), h, polygon));
-                cellQueue.Enqueue(new Cell(new Point(cell.Center.X + h, cell.Center.Y + h), h, polygon));
+                cellQueue.Enqueue(new Cell(new Point(cell.Center.X - h, cell.Center.Y - h), h, polygon, fitnessFunc));
+                cellQueue.Enqueue(new Cell(new Point(cell.Center.X + h, cell.Center.Y - h), h, polygon, fitnessFunc));
+                cellQueue.Enqueue(new Cell(new Point(cell.Center.X - h, cell.Center.Y + h), h, polygon, fitnessFunc));
+                cellQueue.Enqueue(new Cell(new Point(cell.Center.X + h, cell.Center.Y + h), h, polygon, fitnessFunc));
             }
 
             return bestCell.Center;
@@ -134,7 +143,7 @@
         }
 
         // get polygon centroid
-        private static Cell GetCentroidCellOfPolygon(double[][][] polygon)
+        private static Point GetCentroidOfPolygon(double[][][] polygon)
         {
             var area = 0d;
             var x = 0d;
@@ -153,10 +162,10 @@
 
             if (area == 0)
             {
-                return new Cell(new Point(points[0][0], points[0][1]), 0, polygon);
+                return new Point(points[0][0], points[0][1]);
             }
 
-            return new Cell(new Point(x / area, y / area), 0, polygon);
+            return new Point(x / area, y / area);
         }
     }
 }
