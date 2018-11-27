@@ -57,7 +57,7 @@
         /// <returns>The difference between the two distances.</returns>
         public int CompareTo(Cell other)
         {
-            return (int)(other.MaxFitness - this.MaxFitness);
+            return this.MaxFitness.CompareTo(other.MaxFitness);
         }
     }
 }
