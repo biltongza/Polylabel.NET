@@ -63,13 +63,13 @@
                 var cell = cellQueue.Dequeue();
 
                 // update the best cell if we found a better one
-                if (cell.DistanceFromCenterToPolygon > bestCell.DistanceFromCenterToPolygon)
+                if (cell.Fitness > bestCell.Fitness)
                 {
                     bestCell = cell;
                 }
 
                 // do not drill down further if there's no chance of a better solution
-                if (cell.MaxDistanceToPolygonWithinCell - bestCell.DistanceFromCenterToPolygon <= precision)
+                if (cell.MaxFitness - bestCell.Fitness <= precision)
                 {
                     continue;
                 }
