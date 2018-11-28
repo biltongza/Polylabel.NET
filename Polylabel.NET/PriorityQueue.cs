@@ -78,8 +78,8 @@
             if (this.Length == 0) return default(T);
 
             var top = this.internalData[0];
-            var bottom = this.internalData.Last();
-            this.internalData.Remove(bottom);
+            var bottom = this.internalData[this.internalData.Count - 1];
+            this.internalData.RemoveAt(this.internalData.Count - 1);
             this.Length--;
 
             if (this.Length > 0)
