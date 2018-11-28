@@ -8,14 +8,14 @@
         public static Point CalculatePoleOfInaccessibility(double[][][] polygon, double precision = 1.0d)
         {
             // find the bounding box of the outer ring
-            double minX = 0d, minY = 0d, maxX = 0d, maxY = 0d;
+            double minX = double.PositiveInfinity, minY = double.PositiveInfinity, maxX = double.NegativeInfinity, maxY = double.NegativeInfinity;
             for (var i = 0; i < polygon[0].Length; i++)
             {
                 var p = polygon[0][i];
-                if (i == 0 || p[0] < minX) minX = p[0];
-                if (i == 0 || p[1] < minY) minY = p[1];
-                if (i == 0 || p[0] > maxX) maxX = p[0];
-                if (i == 0 || p[1] > maxY) maxY = p[1];
+                if (p[0] < minX) minX = p[0];
+                if (p[1] < minY) minY = p[1];
+                if (p[0] > maxX) maxX = p[0];
+                if (p[1] > maxY) maxY = p[1];
             }
 
             var width = maxX - minX;
