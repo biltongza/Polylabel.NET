@@ -51,25 +51,31 @@ namespace test
         {
             System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
 
-            string input = "things";
-            do
-            {
-                Console.WriteLine("Enter a name");
-                input = Console.ReadLine();
-                if (string.IsNullOrEmpty(input))
-                {
-                    return;
-                }
-                if (!parsedWkts.TryGetValue(input, out double[][][] polygon))
-                {
-                    Console.WriteLine("Invalid name");
-                    continue;
-                }
+            //string input = "things";
+            //do
+            //{
+            //    Console.WriteLine("Enter a name");
+            //    input = Console.ReadLine();
+            //    if (string.IsNullOrEmpty(input))
+            //    {
+            //        return;
+            //    }
+            //    if (!parsedWkts.TryGetValue(input, out double[][][] polygon))
+            //    {
+            //        Console.WriteLine("Invalid name");
+            //        continue;
+            //    }
 
-                var result = Polylabel.NET.Polylabel.CalculatePoleOfInaccessibility(polygon);
-                Console.WriteLine($"POINT ({result.X} {result.Y})");
-            }
-            while (!string.IsNullOrEmpty(input));
+            //    for (double precision = 1; precision > 0.000001; precision /= 10)
+            //    {
+            //        var result = Polylabel.NET.Polylabel.CalculatePoleOfInaccessibility(polygon, precision);
+            //        Console.WriteLine($"{precision} POINT ({result.X} {result.Y})");
+            //    }
+
+            //}
+            //while (!string.IsNullOrEmpty(input));
+
+            BenchmarkRunner.Run<Benchmark>();
 
             //Console.Read();
         }
@@ -78,9 +84,12 @@ namespace test
         {
             [ParamsSource(nameof(GetTestCases))]
             public KeyValuePair<string, double[][][]> TestCase;
+            
+            [Params(1, 0.1, 0.01, 0.001, 0.0001)]
+            public double Precision;
 
             [Benchmark]
-            public Polylabel.NET.Point RunBenchmark() => Polylabel.NET.Polylabel.CalculatePoleOfInaccessibility(TestCase.Value);
+            public Polylabel.NET.Point RunBenchmark() => Polylabel.NET.Polylabel.CalculatePoleOfInaccessibility(TestCase.Value, Precision);
 
             public static IEnumerable<KeyValuePair<string, double[][][]>> GetTestCases() => parsedWkts;
 
