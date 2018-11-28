@@ -1,7 +1,7 @@
 ﻿namespace Polylabel.NET
 {
     using System;
-    
+    using System.Runtime.CompilerServices;
 
     public static class Polylabel
     {
@@ -112,6 +112,7 @@
         }
 
         // get squared distance from a point to a segment
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static double GetSquaredDistanceFromPointToSegment(Point point, Point a, Point b)
         {
             var x = a.X;
