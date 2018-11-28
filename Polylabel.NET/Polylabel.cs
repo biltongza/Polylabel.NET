@@ -1,21 +1,22 @@
 ﻿namespace Polylabel.NET
 {
     using System;
+    using System.Numerics;
     using System.Runtime.CompilerServices;
 
     public static class Polylabel
     {
-        public static Point CalculatePoleOfInaccessibility(double[][][] polygon, double precision = 1.0d)
+        public static Vector<double> CalculatePoleOfInaccessibility(Vector<double>[][] polygon, double precision = 1.0d)
         {
             // find the bounding box of the outer ring
-            double minX = 0d, minY = 0d, maxX = 0d, maxY = 0d;
+            double minX = double.PositiveInfinity, minY = double.PositiveInfinity, maxX = double.NegativeInfinity, maxY = double.NegativeInfinity;
             for (var i = 0; i < polygon[0].Length; i++)
             {
                 var p = polygon[0][i];
-                if (i == 0 || p[0] < minX) minX = p[0];
-                if (i == 0 || p[1] < minY) minY = p[1];
-                if (i == 0 || p[0] > maxX) maxX = p[0];
-                if (i == 0 || p[1] > maxY) maxY = p[1];
+                if (p[0] < minX) minX = p[0];
+                if (p[1] < minY) minY = p[1];
+                if (p[0] > maxX) maxX = p[0];
+                if (p[1] > maxY) maxY = p[1];
             }
 
             var width = maxX - minX;
@@ -24,21 +25,21 @@
             var maxSize = Math.Max(width, height);
             var h = cellSize / 2;
 
-            if (cellSize == 0) return new Point(minX, minY);
+            if (cellSize == 0) return ConstructVectorDouble(minX, minY);
 
             // a priority queue of cells in order of their "potential" (max distance to polygon)
             var cellQueue = new PriorityQueue<Cell>(null);
 
             var centroid = GetCentroidOfPolygon(polygon);
 
-            Func<Point, double, double> fitnessFunc = (Point point, double distance) =>
+            Func<Vector<double>, double, double> fitnessFunc = (Vector<double> point, double distance) =>
             {
                 if (distance <= 0)
                 {
                     return distance;
                 }
                 var d = point - centroid;
-                var distanceCentroid = Math.Sqrt(d.X * d.X + d.Y * d.Y);
+                var distanceCentroid = Math.Sqrt(Vector.Dot(d, d));
                 return distance * (1 - distanceCentroid / maxSize);
             };
 
@@ -47,7 +48,7 @@
             {
                 for (var y = minY; y < maxY; y += cellSize)
                 {
-                    cellQueue.Enqueue(new Cell(new Point(x + h, y + h), h, polygon, fitnessFunc));
+                    cellQueue.Enqueue(new Cell(ConstructVectorDouble(x + h, y + h), h, polygon, fitnessFunc));
                 }
             }
 
@@ -76,17 +77,17 @@
 
                 // split the cell into four cells
                 h = cell.HalfCellSize / 2;
-                cellQueue.Enqueue(new Cell(new Point(cell.Center.X - h, cell.Center.Y - h), h, polygon, fitnessFunc));
-                cellQueue.Enqueue(new Cell(new Point(cell.Center.X + h, cell.Center.Y - h), h, polygon, fitnessFunc));
-                cellQueue.Enqueue(new Cell(new Point(cell.Center.X - h, cell.Center.Y + h), h, polygon, fitnessFunc));
-                cellQueue.Enqueue(new Cell(new Point(cell.Center.X + h, cell.Center.Y + h), h, polygon, fitnessFunc));
+                cellQueue.Enqueue(new Cell(ConstructVectorDouble(cell.Center[0] - h, cell.Center[1] - h), h, polygon, fitnessFunc));
+                cellQueue.Enqueue(new Cell(ConstructVectorDouble(cell.Center[0] + h, cell.Center[1] - h), h, polygon, fitnessFunc));
+                cellQueue.Enqueue(new Cell(ConstructVectorDouble(cell.Center[0] - h, cell.Center[1] + h), h, polygon, fitnessFunc));
+                cellQueue.Enqueue(new Cell(ConstructVectorDouble(cell.Center[0] + h, cell.Center[1] + h), h, polygon, fitnessFunc));
             }
 
             return bestCell.Center;
         }
 
         // signed distance from point to polygon outline (negative if point is outside)
-        public static double GetDistanceFromPointToPolygonOutline(Point point, double[][][] polygon)
+        public static double GetDistanceFromPointToPolygonOutline(Vector<double> point, Vector<double>[][] polygon)
         {
             var inside = false;
             var minDistSq = double.PositiveInfinity;
@@ -96,10 +97,10 @@
                 var ring = polygon[k];
                 for (int i = 0, len = ring.Length, j = len - 1; i < len; j = i++)
                 {
-                    var a = new Point(ring[i][0], ring[i][1]);
-                    var b = new Point(ring[j][0], ring[j][1]);
+                    var a = ring[i];
+                    var b = ring[j];
 
-                    if ((a.Y > point.Y != b.Y > point.Y) && (point.X < (b.X - a.X) * (point.Y - a.Y) / (b.Y - a.Y) + a.X))
+                    if (IsPointInsidePolygon(point, a, b))
                     {
                         inside = !inside;
                     }
@@ -111,40 +112,40 @@
             return (inside ? 1 : -1) * Math.Sqrt(minDistSq);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsPointInsidePolygon(Vector<double> point, Vector<double> a, Vector<double> b)
+        {
+            return (a[1] > point[1] != b[1] > point[1]) && (point[0] < (b[0] - a[0]) * (point[1] - a[1]) / (b[1] - a[1]) + a[0]);
+        }
+
         // get squared distance from a point to a segment
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static double GetSquaredDistanceFromPointToSegment(Point point, Point a, Point b)
+        private static double GetSquaredDistanceFromPointToSegment(Vector<double> point, Vector<double> a, Vector<double> b)
         {
-            var x = a.X;
-            var y = a.Y;
-            var dx = b.X - x;
-            var dy = b.Y - y;
+            var ab = b - a;
+            var ap = point - a;
 
-            if (dx != 0 || dy != 0)
+            var c = Vector.Dot(ap, ab);
+
+            if (c <= 0)
             {
-                var t = ((point.X - x) * dx + (point.Y - y) * dy) / (dx * dx + dy * dy);
-
-                if (t > 1)
-                {
-                    x = b.X;
-                    y = b.Y;
-
-                }
-                else if (t > 0)
-                {
-                    x += dx * t;
-                    y += dy * t;
-                }
+                return Vector.Dot(ap, ap);
             }
 
-            dx = point.X - x;
-            dy = point.Y - y;
+            var bp = point - b;
 
-            return dx * dx + dy * dy;
+            if(Vector.Dot(bp, ab) >= 0)
+            {
+                return Vector.Dot(bp, bp);
+            }
+
+            var e = ap - ab * (c / Vector.Dot(ab, ab));
+
+            return Vector.Dot(e, e);
         }
 
         // get polygon centroid
-        private static Point GetCentroidOfPolygon(double[][][] polygon)
+        private static Vector<double> GetCentroidOfPolygon(Vector<double>[][] polygon)
         {
             var area = 0d;
             var x = 0d;
@@ -163,10 +164,18 @@
 
             if (area == 0)
             {
-                return new Point(points[0][0], points[0][1]);
+                return points[0];
             }
 
-            return new Point(x / area, y / area);
+            return ConstructVectorDouble(x / area, y / area);
+        }
+
+        private static Vector<double> ConstructVectorDouble(double x, double y)
+        {
+            var doubles = new double[Vector<double>.Count];
+            doubles[0] = x;
+            doubles[1] = y;
+            return new Vector<double>(doubles);
         }
     }
 }

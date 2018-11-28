@@ -1,6 +1,7 @@
 ﻿namespace Polylabel.NET
 {
     using System;
+    using System.Numerics;
 
     /// <summary>
     /// Represents a portion of an area covering a polygon
@@ -12,7 +13,7 @@
         /// </summary>
         public static readonly double SquareRootOf2 = Math.Sqrt(2d);
         
-        public Point Center { get; }
+        public Vector<double> Center { get; }
         
         /// <summary>
         /// Half the cell size
@@ -40,7 +41,7 @@
         /// <param name="centerY">The cell center Y coordinate.</param>
         /// <param name="halfCellSize">Half the cell size.</param>
         /// <param name="polygon">The polygon.</param>
-        public Cell(Point center, double halfCellSize, double[][][] polygon, Func<Point, double, double> fitnessFunction)
+        public Cell(Vector<double> center, double halfCellSize, Vector<double>[][] polygon, Func<Vector<double>, double, double> fitnessFunction)
         {
             this.Center = center;
             this.HalfCellSize = halfCellSize;
